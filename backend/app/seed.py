@@ -54,6 +54,42 @@ def init_schema(conn) -> None:
           ticket_count INTEGER NOT NULL,
           line_count INTEGER NOT NULL,
           status TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          pinned_count INTEGER NOT NULL DEFAULT 0,
+          fence_lock_id INTEGER
+        );
+        CREATE TABLE IF NOT EXISTS apply_locks (
+          id INTEGER PRIMARY KEY,
+          batch_no TEXT,
+          batch_id INTEGER,
+          clock_at TEXT NOT NULL,
+          pinned_at TEXT NOT NULL,
+          released_at TEXT,
+          status TEXT NOT NULL,
+          policy TEXT NOT NULL,
+          pinned_count INTEGER NOT NULL DEFAULT 0,
+          rejected_creates INTEGER NOT NULL DEFAULT 0,
+          deferred_creates INTEGER NOT NULL DEFAULT 0,
+          rejected_reschedules INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE TABLE IF NOT EXISTS apply_batch_tickets (
+          id INTEGER PRIMARY KEY,
+          batch_id INTEGER NOT NULL REFERENCES apply_batches(id) ON DELETE CASCADE,
+          lock_id INTEGER NOT NULL REFERENCES apply_locks(id) ON DELETE CASCADE,
+          ticket_id INTEGER NOT NULL REFERENCES price_tickets(id),
+          ticket_no TEXT NOT NULL,
+          effective_at TEXT NOT NULL,
+          line_count INTEGER NOT NULL,
+          pinned_order INTEGER NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS apply_fence_events (
+          id INTEGER PRIMARY KEY,
+          lock_id INTEGER REFERENCES apply_locks(id) ON DELETE CASCADE,
+          batch_no TEXT,
+          event_type TEXT NOT NULL,
+          ticket_no TEXT,
+          policy TEXT,
+          detail TEXT,
           created_at TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS price_book (
@@ -87,6 +123,16 @@ def init_schema(conn) -> None:
         );
         '''
     )
+    # Migrations for databases created before the apply fence.
+    _ensure_column(conn, "price_tickets", "fence_lock_id", "INTEGER")
+    _ensure_column(conn, "apply_batches", "pinned_count", "INTEGER NOT NULL DEFAULT 0")
+    _ensure_column(conn, "apply_batches", "fence_lock_id", "INTEGER")
+
+
+def _ensure_column(conn, table: str, column: str, decl: str) -> None:
+    cols = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column not in cols:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
 
 
 def seed_if_empty() -> None:

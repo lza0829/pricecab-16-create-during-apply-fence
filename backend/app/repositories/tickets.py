@@ -17,15 +17,30 @@ def create_ticket(
     effective_at: str,
     note: str | None,
     created_at: str,
+    fence_lock_id: int | None = None,
 ) -> int:
     cur = conn.execute(
         '''
-        INSERT INTO price_tickets(ticket_no, title, status, effective_at, note, created_at)
-        VALUES (?,?,?,?,?,?)
+        INSERT INTO price_tickets(ticket_no, title, status, effective_at, note, created_at, fence_lock_id)
+        VALUES (?,?,?,?,?,?,?)
         ''',
-        (ticket_no, title, "scheduled", effective_at, note, created_at),
+        (ticket_no, title, "scheduled", effective_at, note, created_at, fence_lock_id),
     )
     return int(cur.lastrowid)
+
+
+def get_by_no(conn: sqlite3.Connection, ticket_no: str) -> dict[str, Any] | None:
+    row = conn.execute(
+        "SELECT * FROM price_tickets WHERE ticket_no=?", (ticket_no,)
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def reschedule(conn: sqlite3.Connection, ticket_id: int, effective_at: str) -> None:
+    conn.execute(
+        "UPDATE price_tickets SET effective_at=? WHERE id=?",
+        (effective_at, ticket_id),
+    )
 
 
 def add_line(

@@ -5,9 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import PROJECT_NAME
 from app.seed import seed_if_empty
+from app.services.apply_service import recover_on_startup
 from app.routers import dashboard, skus, tickets, apply, prices, reconcile, settings
 
 seed_if_empty()
+recover_on_startup()
 
 app = FastAPI(title=PROJECT_NAME)
 app.add_middleware(

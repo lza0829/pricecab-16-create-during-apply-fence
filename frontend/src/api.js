@@ -27,6 +27,18 @@ export const api = {
     request('/api/apply/clock', { method: 'PUT', body: JSON.stringify({ business_clock }) }),
   applyDue: () => request('/api/apply/due', { method: 'POST' }),
   batches: () => request('/api/apply/batches'),
+  batch: (batchNo) => request(`/api/apply/batches/${encodeURIComponent(batchNo)}`),
+  fence: () => request('/api/apply/fence'),
+  fenceEvents: () => request('/api/apply/fence/events'),
+  fenceLocks: () => request('/api/apply/fence/locks'),
+  fencePolicy: () => request('/api/apply/fence/policy'),
+  setFencePolicy: (policy) =>
+    request('/api/apply/fence/policy', { method: 'PUT', body: JSON.stringify({ policy }) }),
+  reschedule: (id, effective_at) =>
+    request(`/api/tickets/${id}/reschedule`, {
+      method: 'PATCH',
+      body: JSON.stringify({ effective_at }),
+    }),
   priceBook: () => request('/api/prices/book'),
   history: (sku) => request(sku ? `/api/prices/history?sku_code=${encodeURIComponent(sku)}` : '/api/prices/history'),
   reconcile: () => request('/api/reconcile/sales'),

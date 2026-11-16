@@ -20,6 +20,10 @@ class TicketCreateIn(BaseModel):
     lines: list[TicketLineIn] = Field(default_factory=list)
 
 
+class TicketRescheduleIn(BaseModel):
+    effective_at: str
+
+
 @router.get("")
 def list_tickets():
     return svc.list_tickets()
@@ -33,3 +37,8 @@ def get_ticket(ticket_id: int):
 @router.post("")
 def create_ticket(body: TicketCreateIn):
     return svc.create_ticket(body.model_dump())
+
+
+@router.patch("/{ticket_id}/reschedule")
+def reschedule_ticket(ticket_id: int, body: TicketRescheduleIn):
+    return svc.reschedule_ticket(ticket_id, body.effective_at)
